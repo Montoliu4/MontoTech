@@ -1,0 +1,354 @@
+<ion-menu contentId="centro-content" menuId="centroMenu" side="start">
+  <ion-header class="ion-no-border">
+    <ion-toolbar>
+      <ion-title>{{ centro?.nombre }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list lines="none">
+      @for (s of secciones; track s.id) {
+        <ion-item
+          [class.activo]="seccionActiva === s.id"
+          (click)="cambiarSeccion(s.id)"
+          [button]="true">
+          <ion-icon [name]="s.icon" slot="start"></ion-icon>
+          <ion-label>{{ s.label }}</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<ion-header class="ion-no-border" id="centro-content">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="centroMenu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>{{ seccionActiva | titlecase }}</ion-title>
+    @if (esSuper) {
+      <ion-buttons slot="end">
+        <ion-back-button defaultHref="/superadmin" text=""></ion-back-button>
+      </ion-buttons>
+    }
+  </ion-toolbar>
+
+  @if (seccionActiva !== 'resumen') {
+    <ion-toolbar>
+      <ion-searchbar
+        [animated]="true"
+        (ionInput)="buscar($event)"
+        placeholder="Buscar..."
+        [debounce]="300">
+      </ion-searchbar>
+    </ion-toolbar>
+  }
+
+  @if (seccionActiva === 'alumnos' || seccionActiva === 'profesores') {
+    <ion-toolbar>
+      <div class="filtros-row">
+        <button class="filtro-btn" [class.activo]="filtroActivo === null" (click)="setFiltroActivo(null)">Todos</button>
+        <button class="filtro-btn" [class.activo]="filtroActivo === true" (click)="setFiltroActivo(true)">Activos</button>
+        <button class="filtro-btn" [class.activo]="filtroActivo === false" (click)="setFiltroActivo(false)">Inactivos</button>
+        <select class="filtro-select" [(ngModel)]="filtroFecha" (change)="setFecha()">
+          <option value="">Cualquier fecha</option>
+          <option value="reciente">Más recientes</option>
+          <option value="antiguo">Más antiguos</option>
+        </select>
+      </div>
+    </ion-toolbar>
+  }
+</ion-header>
+
+<ion-content id="centro-content">
+
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="page-container">
+
+      @if (seccionActiva === 'resumen') {
+        <div class="centro-banner">
+          <div class="centro-icon-big">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+          <div class="centro-banner-info">
+            <div class="centro-nombre">{{ centro.nombre }}</div>
+            <div class="centro-tipo">{{ centro.tipo }}</div>
+            <div class="centro-ciudad">{{ centro.ciudad }}</div>
+          </div>
+          <span class="badge" [ngClass]="centro.activo ? 'badge-green' : 'badge-red'">
+            {{ centro.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-label">Email</div>
+            <div class="info-value">{{ centro.emailContacto }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Dirección</div>
+            <div class="info-value">{{ centro.direccion }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Ciudad</div>
+            <div class="info-value">{{ centro.ciudad }}</div>
+          </div>
+          <div class="info-card">
+            <div class="info-label">Tipo</div>
+            <div class="info-value">{{ centro.tipo }}</div>
+          </div>
+        </div>
+      }
+
+      @if (seccionActiva === 'alumnos') {
+        <div class="seccion-header">
+          <span class="seccion-count">{{ alumnosFiltrados.length }} alumnos</span>
+          <button class="btn-secondary" (click)="abrirModalCSV()">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            Importar CSV
+          </button>
+        </div>
+
+        @if (cargandoLista) {
+          <div class="skeleton-list">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="skeleton-item">
+                <ion-skeleton-text [animated]="true" style="width:40px;height:40px;border-radius:50%"></ion-skeleton-text>
+                <div class="skeleton-info">
+                  <ion-skeleton-text [animated]="true" style="width:60%;height:12px"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width:40%;height:10px;margin-top:4px"></ion-skeleton-text>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!cargandoLista) {
+          <div class="lista">
+            @for (item of dataAlumnos; track $index) {
+              @if (alumnosFiltrados[$index]) {
+                <div class="user-item">
+                  <div class="user-avatar">{{ alumnosFiltrados[$index].nombre.charAt(0) }}{{ alumnosFiltrados[$index].apellidos.charAt(0) }}</div>
+                  <div class="user-info">
+                    <div class="user-nombre">{{ alumnosFiltrados[$index].nombre }} {{ alumnosFiltrados[$index].apellidos }}</div>
+                    <div class="user-email">{{ alumnosFiltrados[$index].email }}</div>
+                  </div>
+                  <span class="badge" [ngClass]="alumnosFiltrados[$index].activo === true || alumnosFiltrados[$index].activo === 1 ? 'badge-green' : 'badge-red'">
+                    {{ alumnosFiltrados[$index].activo === true || alumnosFiltrados[$index].activo === 1 ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+              }
+            }
+            @if (alumnosFiltrados.length === 0) {
+              <div class="empty-state"><p>No se encontraron alumnos</p></div>
+            }
+          </div>
+          <ion-infinite-scroll (ionInfinite)="loadMasAlumnos($event)">
+            <ion-infinite-scroll-content loadingSpinner="crescent"></ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        }
+      }
+
+      @if (seccionActiva === 'profesores') {
+        @if (cargandoLista) {
+          <div class="skeleton-list">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="skeleton-item">
+                <ion-skeleton-text [animated]="true" style="width:40px;height:40px;border-radius:50%"></ion-skeleton-text>
+                <div class="skeleton-info">
+                  <ion-skeleton-text [animated]="true" style="width:60%;height:12px"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width:40%;height:10px;margin-top:4px"></ion-skeleton-text>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!cargandoLista) {
+          <div class="lista">
+            @for (item of dataProfesores; track $index) {
+              @if (profesoresFiltrados[$index]) {
+                <div class="user-item">
+                  <div class="user-avatar" style="background:rgba(34,197,94,0.15);color:#4ade80">
+                    {{ profesoresFiltrados[$index].nombre.charAt(0) }}{{ profesoresFiltrados[$index].apellidos.charAt(0) }}
+                  </div>
+                  <div class="user-info">
+                    <div class="user-nombre">{{ profesoresFiltrados[$index].nombre }} {{ profesoresFiltrados[$index].apellidos }}</div>
+                    <div class="user-email">{{ profesoresFiltrados[$index].email }}</div>
+                    @if (profesoresFiltrados[$index].especialidad) {
+                      <div class="user-extra">{{ profesoresFiltrados[$index].especialidad }}</div>
+                    }
+                  </div>
+                  <span class="badge" [ngClass]="profesoresFiltrados[$index].activo === true || profesoresFiltrados[$index].activo === 1 ? 'badge-green' : 'badge-red'">
+                    {{ profesoresFiltrados[$index].activo === true || profesoresFiltrados[$index].activo === 1 ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </div>
+              }
+            }
+            @if (profesoresFiltrados.length === 0) {
+              <div class="empty-state"><p>No se encontraron profesores</p></div>
+            }
+          </div>
+          <ion-infinite-scroll (ionInfinite)="loadMasProfesores($event)">
+            <ion-infinite-scroll-content loadingSpinner="crescent"></ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        }
+      }
+
+      @if (seccionActiva === 'clases') {
+        @if (cargandoLista) {
+          <div class="skeleton-list">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="skeleton-item">
+                <ion-skeleton-text [animated]="true" style="width:40px;height:40px;border-radius:8px"></ion-skeleton-text>
+                <div class="skeleton-info">
+                  <ion-skeleton-text [animated]="true" style="width:60%;height:12px"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width:40%;height:10px;margin-top:4px"></ion-skeleton-text>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!cargandoLista) {
+          <div class="lista">
+            @for (item of dataClases; track $index) {
+              @if (clasesFiltradas[$index]) {
+                <div class="clase-item">
+                  <div class="clase-icon">
+                    <ion-icon name="book-outline" style="color:#818cf8;font-size:16px"></ion-icon>
+                  </div>
+                  <div class="user-info">
+                    <div class="user-nombre">{{ clasesFiltradas[$index].nombre }}</div>
+                    <div class="user-email">{{ clasesFiltradas[$index].cursoAcademico }} · {{ clasesFiltradas[$index].profesor?.nombre }} {{ clasesFiltradas[$index].profesor?.apellidos }}</div>
+                  </div>
+                  <span class="badge badge-blue">{{ clasesFiltradas[$index].codigoAcceso }}</span>
+                </div>
+              }
+            }
+            @if (clasesFiltradas.length === 0) {
+              <div class="empty-state"><p>No se encontraron clases</p></div>
+            }
+          </div>
+          <ion-infinite-scroll (ionInfinite)="loadMasClases($event)">
+            <ion-infinite-scroll-content loadingSpinner="crescent"></ion-infinite-scroll-content>
+          </ion-infinite-scroll>
+        }
+      }
+
+      @if (seccionActiva === 'administradores') {
+        @if (cargandoLista) {
+          <div class="skeleton-list">
+            @for (i of [1,2]; track i) {
+              <div class="skeleton-item">
+                <ion-skeleton-text [animated]="true" style="width:40px;height:40px;border-radius:50%"></ion-skeleton-text>
+                <div class="skeleton-info">
+                  <ion-skeleton-text [animated]="true" style="width:60%;height:12px"></ion-skeleton-text>
+                  <ion-skeleton-text [animated]="true" style="width:40%;height:10px;margin-top:4px"></ion-skeleton-text>
+                </div>
+              </div>
+            }
+          </div>
+        }
+        @if (!cargandoLista) {
+          <div class="lista">
+            @for (a of adminsFiltrados; track $index) {
+              <div class="user-item">
+                <div class="user-avatar" style="background:rgba(99,102,241,0.15);color:#818cf8">
+                  {{ a.profesor.nombre.charAt(0) }}{{ a.profesor.apellidos.charAt(0) }}
+                </div>
+                <div class="user-info">
+                  <div class="user-nombre">{{ a.profesor.nombre }} {{ a.profesor.apellidos }}</div>
+                  <div class="user-email">{{ a.profesor.email }}</div>
+                </div>
+                <span class="badge badge-blue">Admin</span>
+              </div>
+            }
+            @if (adminsFiltrados.length === 0) {
+              <div class="empty-state"><p>No hay administradores asignados</p></div>
+            }
+          </div>
+        }
+      }
+
+    </div>
+  }
+
+  @if (mostrarModalCSV) {
+    <div class="modal-overlay" (click)="cerrarModalCSV()">
+      <div class="modal" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Importar alumnos desde CSV</div>
+            <div class="modal-sub">El CSV debe tener: nombre, apellidos, email, password, telefono</div>
+          </div>
+          <button class="btn-close" (click)="cerrarModalCSV()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+
+        <div class="csv-format">
+          <div class="csv-format-title">Formato esperado:</div>
+          <div class="csv-code">nombre,apellidos,email,password,telefono</div>
+          <div class="csv-code">Juan,García,juan&#64;ies.es,1234,600000001</div>
+        </div>
+
+        <label class="file-label">
+          <ion-icon name="document-outline"></ion-icon>
+          {{ alumnosCSV.length > 0 ? alumnosCSV.length + ' alumnos cargados' : 'Seleccionar archivo CSV' }}
+          <input type="file" accept=".csv" (change)="onArchivoCSV($event)" style="display:none">
+        </label>
+
+        @if (alumnosCSV.length > 0 && !resultadoImport) {
+          <div class="preview-list">
+            <div class="preview-title">Vista previa ({{ alumnosCSV.length }} registros)</div>
+            @for (a of alumnosCSV.slice(0, 5); track $index) {
+              <div class="preview-item">
+                <span class="preview-nombre">{{ a.nombre }} {{ a.apellidos }}</span>
+                <span class="preview-email">{{ a.email }}</span>
+              </div>
+            }
+            @if (alumnosCSV.length > 5) {
+              <div class="preview-more">... y {{ alumnosCSV.length - 5 }} más</div>
+            }
+          </div>
+        }
+
+        @if (resultadoImport) {
+          <div class="resultado">
+            <div class="resultado-ok">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              {{ resultadoImport.creados }} alumnos creados correctamente
+            </div>
+            @if (resultadoImport.errores > 0) {
+              <div class="resultado-error">
+                <ion-icon name="warning-outline"></ion-icon>
+                {{ resultadoImport.errores }} errores
+              </div>
+              @for (err of resultadoImport.detalleErrores; track $index) {
+                <div class="error-item">{{ err }}</div>
+              }
+            }
+          </div>
+        }
+
+        @if (!resultadoImport) {
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cerrarModalCSV()">Cancelar</button>
+            <button class="btn-save" [disabled]="!alumnosCSV.length || importando" (click)="importarCSV()">
+              {{ importando ? 'Importando...' : 'Importar ' + alumnosCSV.length + ' alumnos' }}
+            </button>
+          </div>
+        } @else {
+          <div class="form-actions">
+            <button class="btn-save" (click)="cerrarModalCSV()">Cerrar</button>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+</ion-content>

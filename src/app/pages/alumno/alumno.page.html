@@ -1,0 +1,49 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>MontoTech</ion-title>
+    <div slot="end" class="avatar">{{ usuario?.nombre?.charAt(0) }}</div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div *ngIf="cargando" class="spinner-container">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!cargando" class="container">
+    <div class="greeting">Bienvenid&#64;</div>
+    <div class="greeting-name">{{ usuario?.nombre }}</div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">{{ clases.length }}</div>
+        <div class="stat-label">Clases</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color: #fbbf24">0</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color: #4ade80">—</div>
+        <div class="stat-label">Media</div>
+      </div>
+    </div>
+
+    <div class="section-title">Mis clases</div>
+
+    <div *ngIf="clases.length === 0" class="empty-state">
+      <p>No tienes clases asignadas</p>
+    </div>
+
+    <div class="grid-container">
+      <div class="clase-card" *ngFor="let clase of clases">
+        <div class="clase-card-accent"></div>
+        <div class="clase-info">
+          <h2>{{ clase.nombre }}</h2>
+          <p>{{ clase.profesor?.nombre }} {{ clase.profesor?.apellidos }} · {{ clase.cursoAcademico }}</p>
+          <p class="descripcion">{{ clase.descripcion }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,164 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Panel SuperAdmin</ion-title>
+    <div slot="end" class="avatar">{{ usuario?.nombre?.charAt(0) }}</div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div *ngIf="cargando" class="spinner-container">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!cargando" class="page-container">
+
+    <div class="topbar">
+      <div>
+        <div class="page-title">Centros</div>
+        <div class="page-sub">{{ centros.length }} centros registrados</div>
+      </div>
+      <button class="btn-primary" (click)="abrirModalNuevo()">
+        <ion-icon name="add-outline"></ion-icon>
+        Nuevo centro
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">{{ centros.length }}</div>
+        <div class="stat-label">Total centros</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:#4ade80">{{ centrosActivos }}</div>
+        <div class="stat-label">Activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:#f87171">{{ centrosInactivos }}</div>
+        <div class="stat-label">Inactivos</div>
+      </div>
+    </div>
+
+    <div class="section-title">Todos los centros</div>
+
+    <div *ngIf="centros.length === 0" class="empty-state">
+      <p>No hay centros registrados</p>
+    </div>
+
+    <div class="centros-grid">
+      <div class="centro-card" *ngFor="let centro of centros"
+           [class.inactivo]="!centro.activo" (click)="verDetalle(centro.id)">
+        <div class="centro-header">
+          <div class="centro-icon">
+            <ion-icon name="business-outline" style="color:#818cf8;font-size:16px"></ion-icon>
+          </div>
+          <div class="centro-info">
+            <div class="centro-nombre">{{ centro.nombre }}</div>
+            <div class="centro-tipo">{{ centro.tipo }}</div>
+          </div>
+          <button class="btn-edit" (click)="abrirModalEditar(centro); $event.stopPropagation()">            <ion-icon name="create-outline"></ion-icon>
+          </button>
+        </div>
+        <div class="centro-meta">
+          <span class="badge badge-blue">{{ centro.ciudad }}</span>
+          <span *ngIf="centro.activo" class="badge badge-green">Activo</span>
+          <span *ngIf="!centro.activo" class="badge badge-red">Inactivo</span>
+        </div>
+        <div class="centro-email">{{ centro.emailContacto }}</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">{{ modoEdicion ? 'Editar centro' : 'Nuevo centro' }}</div>
+          <div class="modal-sub">{{ modoEdicion ? 'Modifica los datos del centro' : 'Rellena los datos para crear un nuevo centro' }}</div>
+        </div>
+        <button class="btn-close" (click)="cerrarModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <form [formGroup]="formulario" (ngSubmit)="guardar()">
+
+        <div class="form-row">
+          <div class="bloque">
+            <label class="etiqueta">Nombre</label>
+            <input class="campo" formControlName="nombre" placeholder="IES Ejemplo">
+            <div class="error" *ngIf="nombre?.invalid && (nombre?.dirty || nombre?.touched)">
+              <small *ngIf="nombre?.errors?.['required']">El nombre es obligatorio</small>
+              <small *ngIf="nombre?.errors?.['minlength']">Mínimo 2 caracteres</small>
+            </div>
+          </div>
+
+          <div class="bloque">
+            <label class="etiqueta">Tipo</label>
+            <select class="campo" formControlName="tipo">
+              <option value="UNIVERSIDAD">Universidad</option>
+              <option value="INSTITUTO">Instituto</option>
+              <option value="FP">Formación Profesional</option>
+              <option value="COLEGIO">Colegio</option>
+              <option value="ACADEMIA">Academia</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="bloque">
+            <label class="etiqueta">Ciudad</label>
+            <input class="campo" formControlName="ciudad" placeholder="Valencia">
+            <div class="error" *ngIf="ciudad?.invalid && (ciudad?.dirty || ciudad?.touched)">
+              <small *ngIf="ciudad?.errors?.['required']">La ciudad es obligatoria</small>
+            </div>
+          </div>
+
+          <div class="bloque">
+            <label class="etiqueta">Email de contacto</label>
+            <input class="campo" type="email" formControlName="emailContacto" placeholder="info@centro.es">
+            <div class="error" *ngIf="emailContacto?.invalid && (emailContacto?.dirty || emailContacto?.touched)">
+              <small *ngIf="emailContacto?.errors?.['required']">El email es obligatorio</small>
+              <small *ngIf="emailContacto?.errors?.['email']">Email no válido</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="bloque">
+          <label class="etiqueta">Dirección</label>
+          <input class="campo" formControlName="direccion" placeholder="Calle Mayor 1">
+          <div class="error" *ngIf="direccion?.invalid && (direccion?.dirty || direccion?.touched)">
+            <small *ngIf="direccion?.errors?.['required']">La dirección es obligatoria</small>
+          </div>
+        </div>
+
+        <div class="bloque" *ngIf="modoEdicion">
+          <label class="etiqueta">Estado del centro</label>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">{{ formulario.get('activo')?.value ? 'Centro activo' : 'Centro inactivo' }}</span>
+              <span class="toggle-desc">{{ formulario.get('activo')?.value ? 'Los usuarios pueden acceder al centro' : 'El centro está deshabilitado' }}</span>
+            </div>
+            <div class="toggle-wrapper">
+              <input type="checkbox" id="toggleActivo" formControlName="activo" class="toggle-input">
+              <label for="toggleActivo" class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="cerrarModal()">Cancelar</button>
+          <button type="submit" class="btn-save" [disabled]="formulario.invalid">
+            {{ modoEdicion ? 'Guardar cambios' : 'Crear centro' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+
+</ion-content>

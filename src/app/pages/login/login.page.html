@@ -1,0 +1,39 @@
+<ion-content class="login-content">
+  <canvas #particleCanvas class="particle-canvas"></canvas>
+
+  <div class="login-container">
+    <div #loginHeader class="login-header opacity-0">
+      <h1>MontoTech</h1>
+      <p>Plataforma educativa</p>
+    </div>
+
+    <div #loginCard class="login-card opacity-0">
+
+      <ion-item>
+        <ion-label position="floating">Email</ion-label>
+        <ion-input type="email" [(ngModel)]="email" placeholder="tu@email.com"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Contraseña</ion-label>
+        <ion-input
+          [type]="mostrarPassword ? 'text' : 'password'"
+          [(ngModel)]="password"
+          placeholder="••••••••">
+        </ion-input>
+        <ion-button fill="clear" slot="end" (click)="mostrarPassword = !mostrarPassword" style="margin-top:16px">
+          <ion-icon [name]="mostrarPassword ? 'eye-off-outline' : 'eye-outline'" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <ion-text color="danger" *ngIf="error">
+        <p class="error-text">{{ error }}</p>
+      </ion-text>
+
+      <ion-button expand="block" class="login-btn" (click)="login()" [disabled]="cargando">
+        {{ cargando ? 'Entrando...' : 'Entrar' }}
+      </ion-button>
+
+    </div>
+  </div>
+</ion-content>
