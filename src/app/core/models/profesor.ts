@@ -3,6 +3,7 @@ export interface Profesor {
   nombre: string;
   apellidos: string;
   email: string;
+  dni: string;
   especialidad?: string;
   telefono?: string;
   activo: boolean;

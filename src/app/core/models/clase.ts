@@ -6,4 +6,7 @@ export interface Clase {
   descripcion?: string;
   fechaInicio?: string;
   fechaFin?: string;
+  activo: boolean;
+  fechaDesactivacion?: string;
+  profesor?: any;
 }

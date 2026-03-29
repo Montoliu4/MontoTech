@@ -153,6 +153,14 @@
       }
 
       @if (seccionActiva === 'profesores') {
+        <div class="seccion-header">
+          <span class="seccion-count">{{ profesoresFiltrados.length }} profesores</span>
+          <button class="btn-secondary" (click)="abrirModalCSVProfesores()">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            Importar CSV
+          </button>
+        </div>
+
         @if (cargandoLista) {
           <div class="skeleton-list">
             @for (i of [1,2,3,4,5]; track i) {
@@ -282,7 +290,7 @@
         <div class="modal-header">
           <div>
             <div class="modal-title">Importar alumnos desde CSV</div>
-            <div class="modal-sub">El CSV debe tener: nombre, apellidos, email, password, telefono</div>
+            <div class="modal-sub">El CSV debe tener: nombre, apellidos, email, dni, password (opcional), telefono (opcional)</div>
           </div>
           <button class="btn-close" (click)="cerrarModalCSV()">
             <ion-icon name="close-outline"></ion-icon>
@@ -291,8 +299,9 @@
 
         <div class="csv-format">
           <div class="csv-format-title">Formato esperado:</div>
-          <div class="csv-code">nombre,apellidos,email,password,telefono</div>
-          <div class="csv-code">Juan,García,juan&#64;ies.es,1234,600000001</div>
+          <div class="csv-code">nombre,apellidos,email,dni,password,telefono</div>
+          <div class="csv-code">Juan,García,juan&#64;ies.es,12345678A,1234,600000001</div>
+          <div class="csv-code">Ana,López,ana&#64;ies.es,87654321B,,600000002</div>
         </div>
 
         <label class="file-label">
@@ -344,6 +353,83 @@
         } @else {
           <div class="form-actions">
             <button class="btn-save" (click)="cerrarModalCSV()">Cerrar</button>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+  @if (mostrarModalCSVProfesores) {
+    <div class="modal-overlay" (click)="cerrarModalCSVProfesores()">
+      <div class="modal" (click)="$event.stopPropagation()">
+
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Importar profesores desde CSV</div>
+            <div class="modal-sub">El CSV debe tener: nombre, apellidos, email, dni, password (opcional), especialidad (opcional), telefono (opcional)</div>
+          </div>
+          <button class="btn-close" (click)="cerrarModalCSVProfesores()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+
+        <div class="csv-format">
+          <div class="csv-format-title">Formato esperado:</div>
+          <div class="csv-code">nombre,apellidos,email,dni,password,especialidad,telefono</div>
+          <div class="csv-code">María,López,maria&#64;ies.es,12345678A,1234,Matemáticas,600000001</div>
+          <div class="csv-code">Pedro,Ruiz,pedro&#64;ies.es,87654321B,,Lengua,</div>
+        </div>
+
+        <label class="file-label">
+          <ion-icon name="document-outline"></ion-icon>
+          {{ profesoresCSV.length > 0 ? profesoresCSV.length + ' profesores cargados' : 'Seleccionar archivo CSV' }}
+          <input type="file" accept=".csv" (change)="onArchivoCSVProfesores($event)" style="display:none">
+        </label>
+
+        @if (profesoresCSV.length > 0 && !resultadoImportProfesores) {
+          <div class="preview-list">
+            <div class="preview-title">Vista previa ({{ profesoresCSV.length }} registros)</div>
+            @for (p of profesoresCSV.slice(0, 5); track $index) {
+              <div class="preview-item">
+                <span class="preview-nombre">{{ p.nombre }} {{ p.apellidos }}</span>
+                <span class="preview-email">{{ p.email }}</span>
+              </div>
+            }
+            @if (profesoresCSV.length > 5) {
+              <div class="preview-more">... y {{ profesoresCSV.length - 5 }} más</div>
+            }
+          </div>
+        }
+
+        @if (resultadoImportProfesores) {
+          <div class="resultado">
+            <div class="resultado-ok">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              {{ resultadoImportProfesores.creados }} profesores creados correctamente
+            </div>
+            @if (resultadoImportProfesores.errores > 0) {
+              <div class="resultado-error">
+                <ion-icon name="warning-outline"></ion-icon>
+                {{ resultadoImportProfesores.errores }} errores
+              </div>
+              @for (err of resultadoImportProfesores.detalleErrores; track $index) {
+                <div class="error-item">{{ err }}</div>
+              }
+            }
+          </div>
+        }
+
+        @if (!resultadoImportProfesores) {
+          <div class="form-actions">
+            <button class="btn-cancel" (click)="cerrarModalCSVProfesores()">Cancelar</button>
+            <button class="btn-save" [disabled]="!profesoresCSV.length || importandoProfesores" (click)="importarCSVProfesores()">
+              {{ importandoProfesores ? 'Importando...' : 'Importar ' + profesoresCSV.length + ' profesores' }}
+            </button>
+          </div>
+        } @else {
+          <div class="form-actions">
+            <button class="btn-save" (click)="cerrarModalCSVProfesores()">Cerrar</button>
           </div>
         }
 

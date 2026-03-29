@@ -68,11 +68,17 @@ export class CentroDetallePage implements OnInit {
   filtroActivo: boolean | null = null;
   filtroFecha: string = '';
 
-  // CSV Import
+  // CSV Alumnos
   mostrarModalCSV = false;
   alumnosCSV: any[] = [];
   importando = false;
   resultadoImport: any = null;
+
+  // CSV Profesores
+  mostrarModalCSVProfesores = false;
+  profesoresCSV: any[] = [];
+  importandoProfesores = false;
+  resultadoImportProfesores: any = null;
 
   formulario!: FormGroup;
 
@@ -217,7 +223,7 @@ export class CentroDetallePage implements OnInit {
     this.resetInfiniteScroll();
   }
 
-  // ===== CSV IMPORT =====
+  // ===== CSV ALUMNOS =====
   abrirModalCSV() {
     this.mostrarModalCSV = true;
     this.alumnosCSV = [];
@@ -236,13 +242,8 @@ export class CentroDetallePage implements OnInit {
       skipEmptyLines: true,
       encoding: 'UTF-8',
       delimiter: ',',
-      complete: (result: any) => {
-        console.log('CSV resultado:', result);
-        this.alumnosCSV = result.data;
-      },
-      error: (err: any) => {
-        console.log('CSV error:', err);
-      }
+      complete: (result: any) => { this.alumnosCSV = result.data; },
+      error: (err: any) => { console.log('CSV error:', err); }
     });
   }
 
@@ -256,6 +257,43 @@ export class CentroDetallePage implements OnInit {
         if (res.creados > 0) this.cargarAlumnos();
       },
       error: () => { this.importando = false; }
+    });
+  }
+
+  // ===== CSV PROFESORES =====
+  abrirModalCSVProfesores() {
+    this.mostrarModalCSVProfesores = true;
+    this.profesoresCSV = [];
+    this.resultadoImportProfesores = null;
+  }
+
+  cerrarModalCSVProfesores() {
+    this.mostrarModalCSVProfesores = false;
+  }
+
+  onArchivoCSVProfesores(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      encoding: 'UTF-8',
+      delimiter: ',',
+      complete: (result: any) => { this.profesoresCSV = result.data; },
+      error: (err: any) => { console.log('CSV error:', err); }
+    });
+  }
+
+  importarCSVProfesores() {
+    if (!this.profesoresCSV.length) return;
+    this.importandoProfesores = true;
+    this.profesorService.importar(this.centroId, this.profesoresCSV).subscribe({
+      next: (res: any) => {
+        this.resultadoImportProfesores = res;
+        this.importandoProfesores = false;
+        if (res.creados > 0) this.cargarProfesores();
+      },
+      error: () => { this.importandoProfesores = false; }
     });
   }
 

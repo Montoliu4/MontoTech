@@ -16,4 +16,8 @@ export class ProfesorService {
   create(data: any) { return this.http.post(this.API, data); }
   update(id: number, data: any) { return this.http.put(`${this.API}/${id}`, data); }
   delete(id: number) { return this.http.delete(`${this.API}/${id}`); }
-  getByCentro(id: number) { return this.http.get<any[]>(`http://localhost:8080/api/profesores/centro/${id}`); }}
+  getByCentro(id: number) { return this.http.get<any[]>(`${this.API}/centro/${id}`); }
+  importar(idCentro: number, profesores: any[]) {
+    return this.http.post(`${this.API}/importar/${idCentro}`, profesores);
+  }
+}

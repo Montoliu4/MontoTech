@@ -3,8 +3,8 @@ export interface Alumno {
   nombre: string;
   apellidos: string;
   email: string;
+  dni: string;
   telefono?: string;
-  fechaNacimiento?: string;
   activo: boolean;
   fechaRegistro?: string;
   fechaDesactivacion?: string;

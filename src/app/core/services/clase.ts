@@ -19,6 +19,5 @@ export class ClaseService {
   create(data: any) { return this.http.post(this.API, data); }
   update(id: number, data: any) { return this.http.put(`${this.API}/${id}`, data); }
   delete(id: number) { return this.http.delete(`${this.API}/${id}`); }
-
-
+  regenerarCodigo(id: number) { return this.http.put(`${this.API}/${id}/regenerar-codigo`, {}); }
 }
