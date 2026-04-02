@@ -1,0 +1,362 @@
+<ion-menu contentId="clase-content" menuId="claseMenu" side="start">
+  <ion-header class="ion-no-border">
+    <ion-toolbar>
+      <ion-title>{{ clase?.nombre }}</ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <ion-content>
+    <ion-list lines="none">
+      <ion-item
+        [class.activo]="seccionActiva === 'contenido'"
+        (click)="volverAContenido()"
+        [button]="true">
+        <ion-icon name="book-outline" slot="start"></ion-icon>
+        <ion-label>Contenido</ion-label>
+      </ion-item>
+      @for (s of secciones; track s.id) {
+        <ion-item
+          [class.activo]="seccionActiva === s.id"
+          (click)="cambiarSeccion(s)"
+          [button]="true">
+          <ion-icon [name]="s.icon" slot="start"></ion-icon>
+          <ion-label>{{ s.label }}</ion-label>
+        </ion-item>
+      }
+    </ion-list>
+  </ion-content>
+</ion-menu>
+
+<ion-header class="ion-no-border" id="clase-content">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button menu="claseMenu"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>{{ clase?.nombre }}</ion-title>
+    <ion-buttons slot="end">
+      <button class="btn-codigo" (click)="toggleCodigo()">
+        <ion-icon name="key-outline"></ion-icon>
+        Código
+      </button>
+      <ion-back-button defaultHref="/profesor" text=""></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  @if (mostrarCodigo) {
+    <div class="codigo-banner">
+      <div class="codigo-label">Código de acceso</div>
+      <div class="codigo-valor">{{ clase?.codigoAcceso }}</div>
+      <div class="codigo-hint">Comparte este código con tus alumnos para que se unan</div>
+    </div>
+  }
+
+  @if (seccionActiva === 'contenido') {
+    <ion-toolbar>
+      <div class="categorias-tabs">
+        @for (cat of categorias; track cat.id) {
+          <button class="categoria-tab"
+                  [class.activo]="categoriaActiva === cat.nombre"
+                  (click)="cambiarCategoria(cat.nombre)">
+            {{ cat.nombre }}s
+          </button>
+        }
+      </div>
+    </ion-toolbar>
+  }
+</ion-header>
+
+<ion-content id="clase-content">
+
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="page-container">
+
+      @if (seccionActiva === 'contenido') {
+        <div class="seccion-header">
+          <div class="seccion-info">
+            <div class="seccion-titulo">{{ categoriaActiva }}s</div>
+            <div class="seccion-count">{{ tareasActivas.length }} activas</div>
+          </div>
+          <button class="btn-add" (click)="abrirModalNuevaTarea()">
+            <ion-icon name="add-outline"></ion-icon>
+            Nueva
+          </button>
+        </div>
+
+        @if (cargandoTareas) {
+          <div class="spinner-container"><ion-spinner name="crescent"></ion-spinner></div>
+        }
+
+        @if (!cargandoTareas) {
+          <div class="tareas-lista">
+            @for (tarea of tareasActivas; track tarea.id) {
+              <div class="tarea-card" (click)="verTarea(tarea)">
+                <div class="tarea-card-top">
+                  <div class="tarea-info">
+                    <div class="tarea-titulo">{{ tarea.titulo }}</div>
+                    @if (tarea.descripcion) {
+                      <div class="tarea-desc">{{ tarea.descripcion }}</div>
+                    }
+                  </div>
+                  <div class="tarea-acciones" (click)="$event.stopPropagation()">
+                    <button class="btn-accion" (click)="abrirModalEditarTarea(tarea)">
+                      <ion-icon name="create-outline"></ion-icon>
+                    </button>
+                    <button class="btn-accion btn-accion-danger" (click)="eliminarTarea(tarea)">
+                      <ion-icon name="trash-outline"></ion-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="entrega-progress">
+                  <div class="entrega-progress-info">
+                    <span class="entrega-count">{{ conteoEntregas[tarea.id] ?? 0 }}/{{ totalAlumnosClase }} entregas</span>
+                    @if ((conteoEntregas[tarea.id] ?? 0) < totalAlumnosClase) {
+                      <span class="sin-entregar-count">
+                        {{ totalAlumnosClase - (conteoEntregas[tarea.id] ?? 0) }} sin entregar
+                      </span>
+                    } @else {
+                      <span class="todos-entregado">Todos entregaron</span>
+                    }
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill"
+                         [style.width.%]="totalAlumnosClase > 0 ? ((conteoEntregas[tarea.id] ?? 0) / totalAlumnosClase) * 100 : 0">
+                    </div>
+                  </div>
+                </div>
+
+                @if (alumnosSinEntregar(tarea.id).length > 0 && totalAlumnosClase > 0) {
+                  <div class="mini-sin-entregar">
+                    @for (a of alumnosSinEntregar(tarea.id).slice(0, 3); track a.id) {
+                      <div class="mini-alumno">{{ a.nombre?.charAt(0) }}{{ a.apellidos?.charAt(0) }}</div>
+                    }
+                    @if (alumnosSinEntregar(tarea.id).length > 3) {
+                      <div class="mini-alumno mini-mas">+{{ alumnosSinEntregar(tarea.id).length - 3 }}</div>
+                    }
+                  </div>
+                }
+
+                <div class="tarea-card-footer">
+                  <div class="tarea-meta">
+                    <ion-icon name="time-outline"></ion-icon>
+                    <span [class.vencida]="esFechaVencida(tarea.fechaLimite)">
+                      {{ tarea.fechaLimite ? (tarea.fechaLimite | date:'dd/MM/yyyy HH:mm') : 'Sin fecha límite' }}
+                    </span>
+                  </div>
+                  <div class="tarea-nota">
+                    <ion-icon name="checkmark-circle-outline"></ion-icon>
+                    <span>Nota máx. {{ tarea.notaMaxima }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (tareasActivas.length === 0) {
+              <div class="empty-state">
+                <p>No hay {{ categoriaActiva | lowercase }}s activas</p>
+              </div>
+            }
+          </div>
+
+          @if (tareasInactivas.length > 0) {
+            <div class="inactivas-header" (click)="mostrarInactivas = !mostrarInactivas">
+              <span>{{ tareasInactivas.length }} ocultas para alumnos</span>
+              <ion-icon [name]="mostrarInactivas ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+            </div>
+            @if (mostrarInactivas) {
+              <div class="tareas-lista inactivas">
+                @for (tarea of tareasInactivas; track tarea.id) {
+                  <div class="tarea-card tarea-inactiva" (click)="verTarea(tarea)">
+                    <div class="tarea-card-top">
+                      <div class="tarea-info">
+                        <div class="tarea-titulo">
+                          <ion-icon name="eye-off-outline" style="font-size:12px;margin-right:4px"></ion-icon>
+                          {{ tarea.titulo }}
+                        </div>
+                        @if (tarea.descripcion) {
+                          <div class="tarea-desc">{{ tarea.descripcion }}</div>
+                        }
+                      </div>
+                      <div class="tarea-acciones" (click)="$event.stopPropagation()">
+                        <button class="btn-accion" (click)="abrirModalEditarTarea(tarea)">
+                          <ion-icon name="create-outline"></ion-icon>
+                        </button>
+                        <button class="btn-accion btn-accion-danger" (click)="eliminarTarea(tarea)">
+                          <ion-icon name="trash-outline"></ion-icon>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="tarea-card-footer">
+                      <div class="tarea-meta">
+                        <ion-icon name="time-outline"></ion-icon>
+                        <span>{{ tarea.fechaLimite ? (tarea.fechaLimite | date:'dd/MM/yyyy HH:mm') : 'Sin fecha límite' }}</span>
+                      </div>
+                      <div class="tarea-nota">
+                        <ion-icon name="checkmark-circle-outline"></ion-icon>
+                        <span>Nota máx. {{ tarea.notaMaxima }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+        }
+      }
+
+      @if (seccionActiva === 'alumnos') {
+        <div class="seccion-header">
+          <div class="seccion-info">
+            <div class="seccion-titulo">Alumnos</div>
+            <div class="seccion-count">{{ alumnos.length }} matriculados</div>
+          </div>
+        </div>
+        @if (cargandoAlumnos) {
+          <div class="spinner-container"><ion-spinner name="crescent"></ion-spinner></div>
+        }
+        @if (!cargandoAlumnos) {
+          <div class="alumnos-lista">
+            @for (matricula of alumnos; track matricula.id) {
+              <div class="alumno-item" [class.bloqueado]="matricula.bloqueado">
+                <div class="user-avatar" [style.opacity]="matricula.bloqueado ? '0.4' : '1'">
+                  {{ matricula.alumno?.nombre?.charAt(0) }}{{ matricula.alumno?.apellidos?.charAt(0) }}
+                </div>
+                <div class="user-info">
+                  <div class="user-nombre">{{ matricula.alumno?.nombre }} {{ matricula.alumno?.apellidos }}</div>
+                  <div class="user-email">{{ matricula.alumno?.email }}</div>
+                  @if (matricula.bloqueado) {
+                    <div style="color:#f87171;font-size:10px;margin-top:2px">Bloqueado</div>
+                  }
+                </div>
+                <button class="btn-bloquear" [class.desbloqueado]="matricula.bloqueado" (click)="toggleBloquear(matricula)">
+                  {{ matricula.bloqueado ? 'Desbloquear' : 'Bloquear' }}
+                </button>
+              </div>
+            }
+            @if (alumnos.length === 0) {
+              <div class="empty-state"><p>No hay alumnos matriculados</p></div>
+            }
+          </div>
+        }
+      }
+
+      @if (seccionActiva === 'calendario') {
+        <div class="calendario-container">
+          <div class="leyenda">
+            <div class="leyenda-item">
+              <div class="leyenda-color" style="background:#ef4444"></div>
+              <span>Exámenes</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-color" style="background:#6366f1"></div>
+              <span>Tareas</span>
+            </div>
+            <div class="leyenda-item">
+              <div class="leyenda-color" style="background:#22c55e"></div>
+              <span>Proyectos</span>
+            </div>
+          </div>
+          <div id="calendar"></div>
+        </div>
+      }
+
+    </div>
+  }
+
+</ion-content>
+
+@if (mostrarModalTarea) {
+  <div class="modal-overlay" (click)="cerrarModalTarea()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">{{ editandoTarea ? 'Editar ' + categoriaActiva : 'Nueva ' + categoriaActiva }}</div>
+          <div class="modal-sub">{{ clase?.nombre }}</div>
+        </div>
+        <button class="btn-close" (click)="cerrarModalTarea()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="form-fields">
+        <div class="bloque">
+          <label class="etiqueta">Título</label>
+          <input class="campo" [(ngModel)]="tareaForm.titulo" placeholder="Título">
+        </div>
+        <div class="bloque">
+          <label class="etiqueta">Descripción</label>
+          <textarea class="campo" [(ngModel)]="tareaForm.descripcion" placeholder="Descripción (opcional)" rows="3"></textarea>
+        </div>
+        <div class="bloque">
+          <label class="etiqueta">Fecha límite</label>
+          <input class="campo" type="datetime-local" [(ngModel)]="tareaForm.fechaLimite">
+        </div>
+        <div class="bloque">
+          <label class="etiqueta">Nota máxima</label>
+          <input class="campo" type="number" [(ngModel)]="tareaForm.notaMaxima" min="1" max="10">
+        </div>
+        <div class="bloque">
+          <label class="etiqueta">Archivos adjuntos (opcional)</label>
+          @if (editandoTarea?.archivoUrl && archivosSeleccionados.length === 0) {
+            <div class="archivos-lista" style="margin-bottom:8px">
+              @for (archivo of getArchivosTarea(editandoTarea); track archivo.url) {
+                <a class="archivo-item" [href]="archivo.url" target="_blank">
+                  <ion-icon name="document-outline"></ion-icon>
+                  <span>{{ archivo.nombre }}</span>
+                </a>
+              }
+            </div>
+          }
+          <label class="btn-subir-archivo">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            Seleccionar archivos
+            <input type="file" multiple (change)="onArchivosSeleccionados($event)" style="display:none">
+          </label>
+          @if (archivosSeleccionados.length > 0) {
+            <div class="archivos-seleccionados">
+              @for (archivo of archivosSeleccionados; track archivo.name; let i = $index) {
+                <div class="archivo-seleccionado">
+                  <ion-icon name="document-outline"></ion-icon>
+                  <span>{{ archivo.name }}</span>
+                  <button class="btn-eliminar-archivo" (click)="eliminarArchivoSeleccionado(i)">
+                    <ion-icon name="close-outline"></ion-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="bloque">
+          <label class="etiqueta">Visible para alumnos</label>
+          <div class="toggle-row">
+            <span class="toggle-label">{{ tareaForm.visible ? 'Visible' : 'Oculta' }}</span>
+            <div class="toggle-wrapper">
+              <input type="checkbox" id="toggleVisible"
+                     [checked]="tareaForm.visible"
+                     (change)="toggleVisible($event)"
+                     class="toggle-input">
+              <label for="toggleVisible" class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" (click)="cerrarModalTarea()">Cancelar</button>
+        <button class="btn-save" [disabled]="!tareaForm.titulo || subiendoArchivo" (click)="guardarTarea()">
+          @if (subiendoArchivo) {
+            <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+            Subiendo...
+          } @else {
+            {{ editandoTarea ? 'Guardar cambios' : 'Crear' }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

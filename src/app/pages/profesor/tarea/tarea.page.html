@@ -1,0 +1,153 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/profesor/clase/' + claseId" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ tarea?.titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  @if (!cargando) {
+    <div class="page-container">
+
+      <div class="tarea-info-card">
+        <div class="tarea-info-header">
+          <div>
+            <div class="tarea-titulo">{{ tarea.titulo }}</div>
+            <div class="tarea-categoria">{{ tarea.categoria?.nombre }}</div>
+          </div>
+          <span class="badge" [ngClass]="tarea.visible ? 'badge-green' : 'badge-gray'">
+            {{ tarea.visible ? 'Visible' : 'Oculta' }}
+          </span>
+        </div>
+        @if (tarea.descripcion) {
+          <div class="tarea-descripcion">{{ tarea.descripcion }}</div>
+        }
+        @if (archivosTarea.length > 0) {
+          <div class="archivos-lista">
+            @for (archivo of archivosTarea; track archivo.url) {
+              <a class="archivo-item" [href]="archivo.url" target="_blank">
+                <ion-icon name="document-outline"></ion-icon>
+                <span>{{ archivo.nombre }}</span>
+                <ion-icon name="cloud-download-outline" class="icono-descargar"></ion-icon>
+              </a>
+            }
+          </div>
+        }
+        <div class="tarea-meta-row">
+          <div class="tarea-meta-item">
+            <ion-icon name="time-outline"></ion-icon>
+            <span [class.vencida]="esFechaVencida(tarea.fechaLimite)">
+              {{ tarea.fechaLimite ? (tarea.fechaLimite | date:'dd/MM/yyyy HH:mm') : 'Sin fecha límite' }}
+            </span>
+          </div>
+          <div class="tarea-meta-item">
+            <ion-icon name="star-outline"></ion-icon>
+            <span>Nota máx. {{ tarea.notaMaxima }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num">{{ entregas.length }}</div>
+          <div class="stat-label">Entregas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:#fbbf24">{{ entregasSinCorregir.length }}</div>
+          <div class="stat-label">Sin corregir</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:#f87171">{{ alumnosSinEntregar.length }}</div>
+          <div class="stat-label">Sin entregar</div>
+        </div>
+      </div>
+
+      @if (alumnosSinEntregar.length > 0) {
+        <div class="seccion-titulo">Sin entregar</div>
+        <div class="sin-entregar-lista">
+          @for (alumno of alumnosSinEntregar; track alumno.id) {
+            <div class="sin-entregar-item">
+              <div class="user-avatar sin-entregar">{{ alumno.nombre?.charAt(0) }}{{ alumno.apellidos?.charAt(0) }}</div>
+              <div class="user-info">
+                <div class="user-nombre">{{ alumno.nombre }} {{ alumno.apellidos }}</div>
+                <div class="user-email">{{ alumno.email }}</div>
+              </div>
+              <ion-icon name="close-circle-outline" style="color:#f87171;font-size:20px"></ion-icon>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="seccion-titulo">
+        Entregas
+        @if (cargandoEntregas) {
+          <ion-spinner name="crescent" style="width:16px;height:16px;margin-left:8px"></ion-spinner>
+        }
+      </div>
+
+      @if (!cargandoEntregas) {
+        @if (entregas.length === 0) {
+          <div class="empty-state"><p>No hay entregas todavía</p></div>
+        }
+        <div class="entregas-lista">
+          @for (entrega of entregas; track entrega.id) {
+            <div class="entrega-card" (click)="verEntrega(entrega)">
+              <div class="entrega-header">
+                <div class="user-avatar">{{ entrega.nombreAlumno?.charAt(0) }}{{ entrega.apellidosAlumno?.charAt(0) }}</div>
+                <div class="user-info">
+                  <div class="user-nombre">{{ entrega.nombreAlumno }} {{ entrega.apellidosAlumno }}</div>
+                  <div class="user-email">{{ entrega.fechaEntrega | date:'dd/MM/yyyy HH:mm' }}</div>
+                </div>
+                <span class="badge" [ngClass]="getEstadoClass(entrega.estadoTarea)">
+                  {{ getEstadoLabel(entrega.estadoTarea) }}
+                </span>
+              </div>
+
+              @if (entrega.comentarioAlumno) {
+                <div class="entrega-comentario">
+                  <ion-icon name="document-outline"></ion-icon>
+                  <span>{{ entrega.comentarioAlumno }}</span>
+                </div>
+              }
+
+              @if (entrega.estadoTarea === 'CALIFICADA') {
+                <div class="entrega-nota">
+                  <ion-icon name="star-outline"></ion-icon>
+                  <span>{{ entrega.nota }} / {{ tarea.notaMaxima }}</span>
+                  @if (entrega.comentarioProfesor) {
+                    <span class="nota-comentario">— {{ entrega.comentarioProfesor }}</span>
+                  }
+                </div>
+              }
+
+              <div class="entrega-footer">
+                @if (entrega.estadoTarea !== 'CALIFICADA') {
+                  <button class="btn-evaluar" (click)="$event.stopPropagation(); verEntrega(entrega)">
+                    <ion-icon name="checkmark-outline"></ion-icon>
+                    Calificar
+                  </button>
+                } @else {
+                  <button class="btn-evaluar btn-reevaluar" (click)="$event.stopPropagation(); verEntrega(entrega)">
+                    <ion-icon name="create-outline"></ion-icon>
+                    Editar nota
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  }
+
+</ion-content>

@@ -2,10 +2,7 @@ import { Component, OnInit, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormsModule } from '@angular/forms';
 import {
-  IonBackButton,
-  IonButtons,
-  IonContent,
-  IonHeader, IonIcon,
+  IonBackButton, IonButtons, IonContent, IonHeader, IonIcon,
   IonInfiniteScroll, IonInfiniteScrollContent, IonItem, IonLabel, IonList, IonMenu, IonMenuButton,
   IonSearchbar, IonSkeletonText, IonSpinner, IonTitle, IonToolbar
 } from '@ionic/angular/standalone';
@@ -20,7 +17,7 @@ import {
   businessOutline, peopleOutline, schoolOutline, personOutline,
   menuOutline, arrowBackOutline, searchOutline, addOutline,
   createOutline, closeOutline, checkmarkCircleOutline, closeCircleOutline,
-  shieldOutline, bookOutline, cloudUploadOutline, documentOutline, warningOutline
+  shieldOutline, bookOutline, cloudUploadOutline, documentOutline, warningOutline, refreshOutline
 } from 'ionicons/icons';
 import Papa from 'papaparse';
 
@@ -30,7 +27,9 @@ import Papa from 'papaparse';
   styleUrls: ['./centro-detalle.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, FormsModule, IonSkeletonText, IonMenu, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel, IonButtons, IonMenuButton, IonBackButton, IonSearchbar, IonSpinner, IonInfiniteScrollContent, IonInfiniteScroll
+    CommonModule, ReactiveFormsModule, FormsModule, IonSkeletonText, IonMenu, IonHeader,
+    IonToolbar, IonTitle, IonContent, IonList, IonItem, IonIcon, IonLabel, IonButtons,
+    IonMenuButton, IonBackButton, IonSearchbar, IonSpinner, IonInfiniteScrollContent, IonInfiniteScroll
   ]
 })
 export class CentroDetallePage implements OnInit {
@@ -54,6 +53,7 @@ export class CentroDetallePage implements OnInit {
   seccionActiva = 'resumen';
   cargando = true;
   cargandoLista = false;
+  cargandoDetalle = false;
 
   todosAlumnos: any[] = [];
   todosProfesores: any[] = [];
@@ -80,6 +80,30 @@ export class CentroDetallePage implements OnInit {
   importandoProfesores = false;
   resultadoImportProfesores: any = null;
 
+  // Detalle Alumno
+  alumnoSeleccionado: any = null;
+  editandoAlumno = false;
+  clasesAlumno: any[] = [];
+  alumnoEditForm: any = {};
+
+  // Detalle Profesor
+  profesorSeleccionado: any = null;
+  editandoProfesor = false;
+  clasesProfesor: any[] = [];
+  profesorEditForm: any = {};
+
+  // Detalle Clase
+  claseSeleccionada: any = null;
+  editandoClase = false;
+  alumnosClase: any[] = [];
+  profesoresClase: any[] = [];
+  claseEditForm: any = {};
+
+  // Detalle Admin
+  adminSeleccionado: any = null;
+  editandoAdmin = false;
+  adminEditForm: any = {};
+
   formulario!: FormGroup;
 
   secciones = [
@@ -95,7 +119,7 @@ export class CentroDetallePage implements OnInit {
       businessOutline, peopleOutline, schoolOutline, personOutline,
       menuOutline, arrowBackOutline, searchOutline, addOutline,
       createOutline, closeOutline, checkmarkCircleOutline, closeCircleOutline,
-      shieldOutline, bookOutline, cloudUploadOutline, documentOutline, warningOutline
+      shieldOutline, bookOutline, cloudUploadOutline, documentOutline, warningOutline, refreshOutline
     });
   }
 
@@ -219,8 +243,215 @@ export class CentroDetallePage implements OnInit {
     this.resetInfiniteScroll();
   }
 
-  setFecha() {
-    this.resetInfiniteScroll();
+  setFecha() { this.resetInfiniteScroll(); }
+
+  // ===== DETALLE ALUMNO =====
+  abrirDetalleAlumno(alumno: any) {
+    this.alumnoSeleccionado = alumno;
+    this.editandoAlumno = false;
+    this.alumnoEditForm = {
+      nombre: alumno.nombre,
+      apellidos: alumno.apellidos,
+      email: alumno.email,
+      dni: alumno.dni,
+      telefono: alumno.telefono || '',
+      password: ''
+    };
+    this.clasesAlumno = [];
+    this.cargandoDetalle = true;
+    this.alumnoService.getClases(alumno.id).subscribe({
+      next: (data: any[]) => { this.clasesAlumno = data; this.cargandoDetalle = false; },
+      error: () => { this.cargandoDetalle = false; }
+    });
+  }
+
+  cerrarDetalleAlumno() {
+    this.alumnoSeleccionado = null;
+    this.editandoAlumno = false;
+  }
+
+  toggleActivoAlumno() {
+    const activo = !this.alumnoSeleccionado.activo;
+    this.alumnoService.update(this.alumnoSeleccionado.id, {
+      ...this.alumnoSeleccionado, activo, password: ''
+    }).subscribe({
+      next: () => {
+        this.alumnoSeleccionado.activo = activo;
+        this.cargarAlumnos();
+      }
+    });
+  }
+
+  guardarAlumno() {
+    this.alumnoService.update(this.alumnoSeleccionado.id, {
+      ...this.alumnoEditForm,
+      activo: this.alumnoSeleccionado.activo
+    }).subscribe({
+      next: () => {
+        Object.assign(this.alumnoSeleccionado, this.alumnoEditForm);
+        this.editandoAlumno = false;
+        this.cargarAlumnos();
+      }
+    });
+  }
+
+  // ===== DETALLE PROFESOR =====
+  abrirDetalleProfesor(profesor: any) {
+    this.profesorSeleccionado = profesor;
+    this.editandoProfesor = false;
+    this.profesorEditForm = {
+      nombre: profesor.nombre,
+      apellidos: profesor.apellidos,
+      email: profesor.email,
+      dni: profesor.dni,
+      especialidad: profesor.especialidad || '',
+      telefono: profesor.telefono || '',
+      password: ''
+    };
+    this.clasesProfesor = [];
+    this.cargandoDetalle = true;
+    this.profesorService.getClases(profesor.id).subscribe({
+      next: (data: any[]) => { this.clasesProfesor = data; this.cargandoDetalle = false; },
+      error: () => { this.cargandoDetalle = false; }
+    });
+  }
+
+  cerrarDetalleProfesor() {
+    this.profesorSeleccionado = null;
+    this.editandoProfesor = false;
+  }
+
+  toggleActivoProfesor() {
+    const activo = !this.profesorSeleccionado.activo;
+    this.profesorService.update(this.profesorSeleccionado.id, {
+      ...this.profesorSeleccionado, activo, password: ''
+    }).subscribe({
+      next: () => {
+        this.profesorSeleccionado.activo = activo;
+        this.cargarProfesores();
+      }
+    });
+  }
+
+  guardarProfesor() {
+    this.profesorService.update(this.profesorSeleccionado.id, {
+      ...this.profesorEditForm,
+      activo: this.profesorSeleccionado.activo
+    }).subscribe({
+      next: () => {
+        Object.assign(this.profesorSeleccionado, this.profesorEditForm);
+        this.editandoProfesor = false;
+        this.cargarProfesores();
+      }
+    });
+  }
+
+  // ===== DETALLE CLASE =====
+  abrirDetalleClase(clase: any) {
+    this.claseSeleccionada = clase;
+    this.editandoClase = false;
+    this.claseEditForm = {
+      nombre: clase.nombre,
+      descripcion: clase.descripcion || '',
+      cursoAcademico: clase.cursoAcademico || '',
+      fechaInicio: clase.fechaInicio || '',
+      fechaFin: clase.fechaFin || ''
+    };
+    this.alumnosClase = [];
+    this.profesoresClase = [];
+    this.cargandoDetalle = true;
+    this.claseService.getAlumnos(clase.id).subscribe({
+      next: (data: any[]) => { this.alumnosClase = data; },
+      error: () => {}
+    });
+    this.claseService.getProfesores(clase.id).subscribe({
+      next: (data: any[]) => { this.profesoresClase = data; this.cargandoDetalle = false; },
+      error: () => { this.cargandoDetalle = false; }
+    });
+  }
+
+  cerrarDetalleClase() {
+    this.claseSeleccionada = null;
+    this.editandoClase = false;
+  }
+
+  toggleActivoClase() {
+    const activo = !this.claseSeleccionada.activo;
+    this.claseService.update(this.claseSeleccionada.id, {
+      ...this.claseEditForm, activo
+    }).subscribe({
+      next: () => {
+        this.claseSeleccionada.activo = activo;
+        this.cargarClases();
+      }
+    });
+  }
+
+  regenerarCodigo() {
+    this.claseService.regenerarCodigo(this.claseSeleccionada.id).subscribe({
+      next: (res: any) => {
+        const nuevoCodigo = res.mensaje?.split(': ')[1] ?? res.mensaje;
+        this.claseSeleccionada.codigoAcceso = nuevoCodigo;
+        this.cargarClases();
+      }
+    });
+  }
+
+  guardarClase() {
+    this.claseService.update(this.claseSeleccionada.id, {
+      ...this.claseEditForm,
+      activo: this.claseSeleccionada.activo
+    }).subscribe({
+      next: () => {
+        Object.assign(this.claseSeleccionada, this.claseEditForm);
+        this.editandoClase = false;
+        this.cargarClases();
+      }
+    });
+  }
+
+  // ===== DETALLE ADMIN =====
+  abrirDetalleAdmin(admin: any) {
+    this.adminSeleccionado = admin;
+    this.editandoAdmin = false;
+    this.adminEditForm = {
+      nombre: admin.profesor.nombre,
+      apellidos: admin.profesor.apellidos,
+      email: admin.profesor.email,
+      dni: admin.profesor.dni,
+      telefono: admin.profesor.telefono || '',
+      password: ''
+    };
+  }
+
+  cerrarDetalleAdmin() {
+    this.adminSeleccionado = null;
+    this.editandoAdmin = false;
+  }
+
+  toggleActivoAdmin() {
+    const activo = !this.adminSeleccionado.profesor.activo;
+    this.profesorService.update(this.adminSeleccionado.profesor.id, {
+      ...this.adminSeleccionado.profesor, activo, password: ''
+    }).subscribe({
+      next: () => {
+        this.adminSeleccionado.profesor.activo = activo;
+        this.cargarAdmins();
+      }
+    });
+  }
+
+  guardarAdmin() {
+    this.profesorService.update(this.adminSeleccionado.profesor.id, {
+      ...this.adminEditForm,
+      activo: this.adminSeleccionado.profesor.activo
+    }).subscribe({
+      next: () => {
+        Object.assign(this.adminSeleccionado.profesor, this.adminEditForm);
+        this.editandoAdmin = false;
+        this.cargarAdmins();
+      }
+    });
   }
 
   // ===== CSV ALUMNOS =====
@@ -230,18 +461,13 @@ export class CentroDetallePage implements OnInit {
     this.resultadoImport = null;
   }
 
-  cerrarModalCSV() {
-    this.mostrarModalCSV = false;
-  }
+  cerrarModalCSV() { this.mostrarModalCSV = false; }
 
   onArchivoCSV(event: any) {
     const file = event.target.files[0];
     if (!file) return;
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      encoding: 'UTF-8',
-      delimiter: ',',
+      header: true, skipEmptyLines: true, encoding: 'UTF-8', delimiter: ',',
       complete: (result: any) => { this.alumnosCSV = result.data; },
       error: (err: any) => { console.log('CSV error:', err); }
     });
@@ -267,18 +493,13 @@ export class CentroDetallePage implements OnInit {
     this.resultadoImportProfesores = null;
   }
 
-  cerrarModalCSVProfesores() {
-    this.mostrarModalCSVProfesores = false;
-  }
+  cerrarModalCSVProfesores() { this.mostrarModalCSVProfesores = false; }
 
   onArchivoCSVProfesores(event: any) {
     const file = event.target.files[0];
     if (!file) return;
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      encoding: 'UTF-8',
-      delimiter: ',',
+      header: true, skipEmptyLines: true, encoding: 'UTF-8', delimiter: ',',
       complete: (result: any) => { this.profesoresCSV = result.data; },
       error: (err: any) => { console.log('CSV error:', err); }
     });

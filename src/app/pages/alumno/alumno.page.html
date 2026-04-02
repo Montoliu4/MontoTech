@@ -1,49 +1,107 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-title>MontoTech</ion-title>
-    <div slot="end" class="avatar">{{ usuario?.nombre?.charAt(0) }}</div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <div *ngIf="cargando" class="spinner-container">
-    <ion-spinner name="crescent"></ion-spinner>
-  </div>
 
-  <div *ngIf="!cargando" class="container">
-    <div class="greeting">Bienvenid&#64;</div>
-    <div class="greeting-name">{{ usuario?.nombre }}</div>
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num">{{ clases.length }}</div>
-        <div class="stat-label">Clases</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color: #fbbf24">0</div>
-        <div class="stat-label">Pendientes</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" style="color: #4ade80">—</div>
-        <div class="stat-label">Media</div>
-      </div>
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
     </div>
+  }
 
-    <div class="section-title">Mis clases</div>
+  @if (!cargando) {
+    <div class="page-container">
 
-    <div *ngIf="clases.length === 0" class="empty-state">
-      <p>No tienes clases asignadas</p>
-    </div>
-
-    <div class="grid-container">
-      <div class="clase-card" *ngFor="let clase of clases">
-        <div class="clase-card-accent"></div>
-        <div class="clase-info">
-          <h2>{{ clase.nombre }}</h2>
-          <p>{{ clase.profesor?.nombre }} {{ clase.profesor?.apellidos }} · {{ clase.cursoAcademico }}</p>
-          <p class="descripcion">{{ clase.descripcion }}</p>
+      <div class="hero">
+        <div class="hero-text">
+          <span class="bienvenido">Bienvenid@</span>
+          <h1>{{ usuario?.nombre }}</h1>
         </div>
       </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num" style="color:#818cf8">{{ clases.length }}</div>
+          <div class="stat-label">Clases</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:#fbbf24">{{ tareasPendientes }}</div>
+          <div class="stat-label">Sin corregir</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" style="color:#34d399">{{ mediaNotas ?? '—' }}</div>
+          <div class="stat-label">Media</div>
+        </div>
+      </div>
+
+      <div class="seccion-header">
+        <span class="seccion-titulo">MIS CLASES</span>
+        <button class="btn-unirse" (click)="abrirModalUnirse()">
+          <ion-icon name="add-outline"></ion-icon>
+          Unirse
+        </button>
+      </div>
+
+      @if (clases.length === 0) {
+        <div class="empty-state">
+          <ion-icon name="school-outline"></ion-icon>
+          <p>No estás matriculado en ninguna clase</p>
+          <button class="btn-unirse-big" (click)="abrirModalUnirse()">Unirse con código</button>
+        </div>
+      }
+
+      <div class="clases-lista">
+        @for (clase of clases; track clase.id) {
+          <div class="clase-card" [class.bloqueado]="clase.bloqueado" (click)="irAClase(clase)">
+            <div class="clase-accent"></div>
+            <div class="clase-info">
+              <div class="clase-nombre">{{ clase.nombre }}</div>
+              <div class="clase-meta">· {{ clase.cursoAcademico }}</div>
+              @if (clase.descripcion) {
+                <div class="clase-desc">{{ clase.descripcion }}</div>
+              }
+            </div>
+            @if (clase.bloqueado) {
+              <span class="badge-bloqueado">Bloqueado</span>
+            }
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+</ion-content>
+
+@if (mostrarModalUnirse) {
+  <div class="modal-overlay" (click)="cerrarModalUnirse()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title">Unirse a una clase</div>
+        <button class="btn-close" (click)="cerrarModalUnirse()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="form-fields">
+        <div class="bloque">
+          <label class="etiqueta">Código de acceso</label>
+          <input class="campo" type="text" [(ngModel)]="codigoAcceso"
+                 placeholder="Introduce el código" (keyup.enter)="unirseAClase()">
+        </div>
+        @if (errorCodigo) {
+          <div class="error-msg">{{ errorCodigo }}</div>
+        }
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" (click)="cerrarModalUnirse()">Cancelar</button>
+        <button class="btn-save" [disabled]="uniendose" (click)="unirseAClase()">
+          @if (uniendose) { <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner> }
+          @else { Unirse }
+        </button>
+      </div>
     </div>
   </div>
-</ion-content>
+}

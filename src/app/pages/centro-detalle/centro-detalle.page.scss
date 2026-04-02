@@ -298,7 +298,7 @@ ion-searchbar {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 99999;
   padding: 20px;
 }
 
@@ -463,4 +463,82 @@ ion-searchbar {
   color: rgba(255,255,255,0.35);
   font-size: 11px;
   padding: 3px 0 3px 20px;
+}
+.detalle-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(99,102,241,0.15);
+  color: #818cf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.modal-detalle { max-height: 85vh; overflow-y: auto; }
+
+.detalle-fields { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+
+.detalle-field { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+.detalle-label { color: rgba(255,255,255,0.35); font-size: 11px; }
+
+.detalle-val { color: white; font-size: 13px; }
+
+.detalle-section-title {
+  color: rgba(255,255,255,0.35);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 16px 0 8px;
+}
+
+.detalle-list { display: flex; flex-direction: column; gap: 6px; }
+
+.detalle-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  color: white;
+  font-size: 12px;
+}
+
+.detalle-empty { color: rgba(255,255,255,0.25); font-size: 12px; text-align: center; padding: 12px 0; }
+
+.detalle-loading { display: flex; justify-content: center; padding: 12px 0; }
+:host {
+  .bloque {
+    margin-bottom: 12px;
+  }
+
+  .etiqueta {
+    display: block;
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .campo {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: white;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+    &:focus {
+      border-color: rgba(99,102,241,0.6);
+    }
+    &::placeholder { color: rgba(255,255,255,0.2); }
+  }
 }

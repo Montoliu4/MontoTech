@@ -1,0 +1,201 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/alumno/clase/' + claseId" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ tarea?.titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  @if (!cargando && tarea) {
+    <div class="page-container">
+
+      <!-- INFO TAREA -->
+      <div class="tarea-header">
+        <div class="tarea-categoria">{{ tarea.categoria?.nombre }}</div>
+        <h1 class="tarea-titulo">{{ tarea.titulo }}</h1>
+        <div class="tarea-meta-row">
+          <div class="tarea-meta-item">
+            <ion-icon name="time-outline"></ion-icon>
+            <span [class.vencida]="esFechaVencida(tarea.fechaLimite)">
+              {{ tarea.fechaLimite ? (tarea.fechaLimite | date:'dd/MM/yyyy HH:mm') : 'Sin fecha límite' }}
+            </span>
+          </div>
+          <div class="tarea-meta-item">
+            <ion-icon name="star-outline"></ion-icon>
+            <span>Nota máx. {{ tarea.notaMaxima }}</span>
+          </div>
+          <span class="badge" [ngClass]="getEstadoClass(estadoEntrega)">
+            {{ getEstadoLabel(estadoEntrega) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- ENUNCIADO -->
+      @if (tarea.descripcion || archivosTarea.length > 0) {
+        <div class="seccion-card">
+          <div class="seccion-card-titulo">
+            <ion-icon name="document-outline"></ion-icon>
+            Enunciado
+          </div>
+          @if (tarea.descripcion) {
+            <p class="enunciado-texto">{{ tarea.descripcion }}</p>
+          }
+          @if (archivosTarea.length > 0) {
+            <div class="archivos-lista">
+              @for (archivo of archivosTarea; track archivo.url) {
+                <a class="archivo-item" [href]="archivo.url" target="_blank">
+                  <ion-icon name="document-outline"></ion-icon>
+                  <span>{{ archivo.nombre }}</span>
+                  <ion-icon name="cloud-download-outline" class="icono-descargar"></ion-icon>
+                </a>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- CALIFICACION -->
+      @if (entrega?.estadoTarea === 'CALIFICADA') {
+        <div class="seccion-card calificada">
+          <div class="seccion-card-titulo">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Calificación
+          </div>
+          <div class="nota-grande">
+            {{ entrega.nota }} <span class="nota-max">/ {{ tarea.notaMaxima }}</span>
+          </div>
+          @if (entrega.comentarioProfesor) {
+            <div class="comentario-prof">
+              <div class="comentario-label">Comentario del profesor</div>
+              <p>{{ entrega.comentarioProfesor }}</p>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TU ENTREGA -->
+      <div class="seccion-card">
+        <div class="seccion-card-header">
+          <div class="seccion-card-titulo">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            Tu entrega
+          </div>
+          @if (entrega && entrega.estadoTarea !== 'CALIFICADA' && !modoEdicion) {
+            <button class="btn-editar" (click)="activarEdicion()">
+              <ion-icon name="create-outline"></ion-icon>
+              Editar
+            </button>
+          }
+        </div>
+
+        @if (!entrega && !modoEdicion) {
+          <p class="sin-entrega">Todavía no has entregado esta tarea.</p>
+          <button class="btn-entregar" (click)="modoEdicion = true">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            Entregar ahora
+          </button>
+        }
+
+        @if (entrega && !modoEdicion) {
+          <div class="entrega-info">
+            @if (entrega.comentarioAlumno) {
+              <div class="entrega-campo">
+                <div class="campo-label">Tu comentario</div>
+                <p>{{ entrega.comentarioAlumno }}</p>
+              </div>
+            }
+            @if (archivosEntrega.length > 0) {
+              <div class="entrega-campo">
+                <div class="campo-label">Archivos entregados</div>
+                <div class="archivos-lista">
+                  @for (archivo of archivosEntrega; track archivo.url) {
+                    <a class="archivo-item" [href]="archivo.url" target="_blank">
+                      <ion-icon name="document-outline"></ion-icon>
+                      <span>{{ archivo.nombre }}</span>
+                      <ion-icon name="cloud-download-outline" class="icono-descargar"></ion-icon>
+                    </a>
+                  }
+                </div>
+              </div>
+            }
+            @if (!entrega.comentarioAlumno && archivosEntrega.length === 0) {
+              <p class="sin-entrega">Entrega sin comentario ni archivos.</p>
+            }
+            <div class="entrega-fecha">
+              Entregado el {{ entrega.fechaEntrega | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+        }
+
+        @if (modoEdicion) {
+          <div class="form-fields">
+            <div class="bloque">
+              <label class="etiqueta">Comentario (opcional)</label>
+              <textarea class="campo" [(ngModel)]="entregaForm.comentarioAlumno"
+                        placeholder="Añade un comentario..." rows="4"></textarea>
+            </div>
+            <div class="bloque">
+              <label class="etiqueta">Archivos (opcional)</label>
+              @if (archivosEntrega.length > 0 && archivosSeleccionados.length === 0) {
+                <div class="archivos-lista" style="margin-bottom:8px">
+                  @for (archivo of archivosEntrega; track archivo.url) {
+                    <a class="archivo-item" [href]="archivo.url" target="_blank">
+                      <ion-icon name="document-outline"></ion-icon>
+                      <span>{{ archivo.nombre }}</span>
+                    </a>
+                  }
+                </div>
+              }
+              <label class="btn-subir-archivo">
+                <ion-icon name="cloud-upload-outline"></ion-icon>
+                Seleccionar archivos
+                <input type="file" multiple (change)="onArchivosSeleccionados($event)" style="display:none">
+              </label>
+              @if (archivosSeleccionados.length > 0) {
+                <div class="archivos-seleccionados">
+                  @for (archivo of archivosSeleccionados; track archivo.name; let i = $index) {
+                    <div class="archivo-seleccionado">
+                      <ion-icon name="document-outline"></ion-icon>
+                      <span>{{ archivo.name }}</span>
+                      <button class="btn-eliminar-archivo" (click)="eliminarArchivoSeleccionado(i)">
+                        <ion-icon name="close-outline"></ion-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+          <div class="form-actions">
+            @if (entrega) {
+              <button class="btn-cancel" (click)="cancelarEdicion()">
+                <ion-icon name="close-outline"></ion-icon>
+                Cancelar
+              </button>
+            }
+            <button class="btn-save" [disabled]="enviando" (click)="enviarEntrega()">
+              @if (enviando) {
+                <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+                {{ subiendoArchivo ? 'Subiendo archivos...' : 'Enviando...' }}
+              } @else {
+                <ion-icon name="cloud-upload-outline"></ion-icon>
+                {{ entrega ? 'Actualizar entrega' : 'Entregar' }}
+              }
+            </button>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+</ion-content>

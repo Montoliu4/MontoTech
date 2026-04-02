@@ -1,0 +1,136 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/profesor/clase/' + claseId + '/tarea/' + tareaId" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>Entrega</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  @if (cargando) {
+    <div class="spinner-container">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  @if (!cargando && entrega) {
+    <div class="page-container">
+
+      <!-- ALUMNO -->
+      <div class="alumno-card">
+        <div class="user-avatar">
+          {{ entrega.nombreAlumno?.charAt(0) }}{{ entrega.apellidosAlumno?.charAt(0) }}
+        </div>
+        <div class="alumno-info">
+          <div class="alumno-nombre">{{ entrega.nombreAlumno }} {{ entrega.apellidosAlumno }}</div>
+          <div class="alumno-email">{{ entrega.emailAlumno }}</div>
+        </div>
+        <span class="badge" [ngClass]="getEstadoClass(entrega.estadoTarea)">
+          {{ getEstadoLabel(entrega.estadoTarea) }}
+        </span>
+      </div>
+
+      <!-- TAREA INFO -->
+      <div class="seccion-card">
+        <div class="seccion-card-titulo">
+          <ion-icon name="document-outline"></ion-icon>
+          Tarea
+        </div>
+        <div class="tarea-nombre">{{ tarea?.titulo }}</div>
+        @if (tarea?.descripcion) {
+          <p class="tarea-desc">{{ tarea.descripcion }}</p>
+        }
+        @if (archivosTarea.length > 0) {
+          <div class="archivos-lista">
+            @for (archivo of archivosTarea; track archivo.url) {
+              <a class="archivo-item" [href]="archivo.url" target="_blank">
+                <ion-icon name="document-outline"></ion-icon>
+                <span>{{ archivo.nombre }}</span>
+                <ion-icon name="cloud-download-outline" class="icono-descargar"></ion-icon>
+              </a>
+            }
+          </div>
+        }
+        <div class="tarea-meta">
+          <ion-icon name="star-outline"></ion-icon>
+          Nota máxima: {{ tarea?.notaMaxima }}
+        </div>
+      </div>
+
+      <!-- ENTREGA DEL ALUMNO -->
+      <div class="seccion-card">
+        <div class="seccion-card-titulo">
+          <ion-icon name="checkmark-outline"></ion-icon>
+          Entrega del alumno
+        </div>
+        <div class="entrega-fecha">
+          Entregado el {{ entrega.fechaEntrega | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        @if (entrega.comentarioAlumno) {
+          <div class="entrega-campo">
+            <div class="campo-label">Comentario</div>
+            <p>{{ entrega.comentarioAlumno }}</p>
+          </div>
+        }
+        @if (archivosEntrega.length > 0) {
+          <div class="entrega-campo">
+            <div class="campo-label">Archivos entregados</div>
+            <div class="archivos-lista">
+              @for (archivo of archivosEntrega; track archivo.url) {
+                <a class="archivo-item" [href]="archivo.url" target="_blank">
+                  <ion-icon name="document-outline"></ion-icon>
+                  <span>{{ archivo.nombre }}</span>
+                  <ion-icon name="cloud-download-outline" class="icono-descargar"></ion-icon>
+                </a>
+              }
+            </div>
+          </div>
+        }
+        @if (!entrega.comentarioAlumno && archivosEntrega.length === 0) {
+          <p class="sin-contenido">El alumno no adjuntó comentario ni archivos.</p>
+        }
+      </div>
+
+      <!-- CALIFICACION -->
+      <div class="seccion-card">
+        <div class="seccion-card-titulo">
+          <ion-icon name="star-outline"></ion-icon>
+          Calificación
+        </div>
+
+        @if (guardado) {
+          <div class="guardado-msg">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Guardado correctamente
+          </div>
+        }
+
+        <div class="form-fields">
+          <div class="bloque">
+            <label class="etiqueta">Nota (máx. {{ tarea?.notaMaxima }})</label>
+            <input class="campo" type="number" [(ngModel)]="evaluarForm.nota"
+                   min="0" [max]="tarea?.notaMaxima" placeholder="0">
+          </div>
+          <div class="bloque">
+            <label class="etiqueta">Comentario para el alumno (opcional)</label>
+            <textarea class="campo" [(ngModel)]="evaluarForm.comentarioProfesor"
+                      placeholder="Escribe un comentario..." rows="4"></textarea>
+          </div>
+        </div>
+        <button class="btn-save" [disabled]="evaluarForm.nota === null || guardando" (click)="guardarEvaluacion()">
+          @if (guardando) {
+            <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+            Guardando...
+          } @else {
+            <ion-icon name="checkmark-outline"></ion-icon>
+            {{ entrega.estadoTarea === 'CALIFICADA' ? 'Actualizar nota' : 'Guardar nota' }}
+          }
+        </button>
+      </div>
+
+    </div>
+  }
+
+</ion-content>
